@@ -25,7 +25,7 @@ jobs:
           gradle-version: "9.3.1"
 
       - name: Compilar APK de depuración
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        run: gradle :app:assembleDebug --no-daemon --no-configuration-cache --stacktrace
 
       - name: Renombrar APK
         run: |
