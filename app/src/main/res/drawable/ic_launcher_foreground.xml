@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Globo de diálogo (subtítulo) -->
+    <path
+        android:fillColor="#FFF4F2FF"
+        android:pathData="M30,36 L78,36 Q84,36 84,42 L84,64 Q84,70 78,70 L58,70 L46,80 L46,70 L30,70 Q24,70 24,64 L24,42 Q24,36 30,36 Z" />
+    <!-- Líneas de subtítulo -->
+    <path
+        android:fillColor="#FF5B4BFF"
+        android:pathData="M32,47 L60,47 Q62,47 62,49 L62,49 Q62,51 60,51 L32,51 Q30,51 30,49 L30,49 Q30,47 32,47 Z" />
+    <path
+        android:fillColor="#FF9D8CFF"
+        android:pathData="M32,56 L50,56 Q52,56 52,58 L52,58 Q52,60 50,60 L32,60 Q30,60 30,58 L30,58 Q30,56 32,56 Z" />
+    <!-- Ondas de voz -->
+    <path
+        android:fillColor="#FF55E0C2"
+        android:pathData="M66,49 L68,49 L68,59 L66,59 Z" />
+    <path
+        android:fillColor="#FF55E0C2"
+        android:pathData="M71,45 L73,45 L73,63 L71,63 Z" />
+    <path
+        android:fillColor="#FF55E0C2"
+        android:pathData="M76,50 L78,50 L78,58 L76,58 Z" />
+</vector>

@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">SubVox</string>
+    <string name="status_active">ESCUCHANDO</string>
+    <string name="status_paused">EN PAUSA</string>
+    <string name="status_inactive">DETENIDO</string>
+    <string name="warning_flag_secure">Pantalla protegida detectada (FLAG_SECURE o DRM)</string>
+    <string name="warning_projection_revoked">Permiso de captura de pantalla revocado</string>
+    <string name="btn_start_reader">EMPEZAR A ESCUCHAR</string>
+    <string name="btn_resume_reader">REANUDAR</string>
+    <string name="btn_pause_reader">PAUSAR</string>
+    <string name="btn_stop_reader">DETENER</string>
+    <string name="notif_title_paused">SubVox en pausa</string>
+    <string name="notif_title_active">SubVox está escuchando</string>
+    <string name="notif_action_resume">Reanudar</string>
+    <string name="notif_action_pause">Pausar</string>
+    <string name="notif_action_stop">Detener</string>
+    <string name="notif_channel_name">SubVox en segundo plano</string>
+    <string name="notif_channel_desc">Notificación en primer plano mientras SubVox lee los subtítulos en voz alta</string>
+</resources>

@@ -1,0 +1,6 @@
+{
+  "name": "SubVox",
+  "description": "SubVox: lector de subtítulos en tiempo real con OCR local y voz neuronal",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
