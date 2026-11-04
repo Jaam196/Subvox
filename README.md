@@ -117,3 +117,9 @@ Las animaciones se pueden apagar en la misma pantalla (ahorra batería). Los tem
 
 - **Saltar openings/endings** (Lectura → Filtros): no lee líneas con ♪/♫ ni las que llegan justo después de dos líneas marcadas; también descarta rótulos de staff ("Música:", "Directed by…").
 - **Correcciones del OCR** (Más → Correcciones): en el Historial pulsa el lápiz, edita la frase y la app aprende el cambio (palabras completas) para aplicarlo a las siguientes. También se pueden añadir reglas a mano.
+
+## Descargar el APK
+
+Cada vez que se sube un cambio a `main`, GitHub compila el APK (pestaña **Actions** → última ejecución → *Artifacts* → `SubVox-apk`).
+Las versiones estables salen en **Releases** cuando se publica una etiqueta `vX.Y.Z`.
+El APK es de depuración (firma de depuración): se puede instalar directamente en el móvil.
