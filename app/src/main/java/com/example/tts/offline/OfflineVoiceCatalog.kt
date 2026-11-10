@@ -148,6 +148,7 @@ object OfflineVoiceCatalog {
 
     const val INSTALLED_MARKER = ".installed"
     const val LOAD_GUARD = "loading.lock"
+    private const val CRASH_STRIKE = "crash.strike"
 
     fun getMarkerFile(context: Context, modelId: String): File =
         File(getModelInstallDir(context, modelId), INSTALLED_MARKER)
@@ -189,6 +190,7 @@ object OfflineVoiceCatalog {
 
     fun endLoadGuard(context: Context, modelId: String) {
         runCatching { File(getModelInstallDir(context, modelId), LOAD_GUARD).delete() }
+        runCatching { File(getModelInstallDir(context, modelId), CRASH_STRIKE).takeIf { it.exists() }?.delete() }
     }
 
     /**
@@ -197,7 +199,10 @@ object OfflineVoiceCatalog {
      *  - si una carga anterior mató la app (queda loading.lock), borra esa voz para no entrar en un
      *    bucle de cierres. Devuelve los ids de las voces retiradas por este motivo.
      */
-    fun recoverAtStartup(context: Context): List<Pair<String, String>> {
+    fun recoverAtStartup(
+        context: Context,
+        previousExitWasNativeCrash: Boolean? = null
+    ): List<Pair<String, String>> {
         val removedAfterCrash = mutableListOf<Pair<String, String>>()
         val root = getModelsRootDir(context)
         root.listFiles()?.forEach { entry ->
@@ -205,9 +210,24 @@ object OfflineVoiceCatalog {
             when {
                 entry.name.endsWith(".tmp") -> Unit // lo gestiona el trabajador de descarga
                 File(entry, LOAD_GUARD).exists() -> {
-                    val stage = runCatching { File(entry, LOAD_GUARD).readText() }.getOrDefault("").ifBlank { "carga del modelo" }
-                    entry.deleteRecursively()
-                    removedAfterCrash += entry.name to stage
+                    val guard = File(entry, LOAD_GUARD)
+                    val strike = File(entry, CRASH_STRIKE)
+                    val stage = runCatching { guard.readText() }.getOrDefault("").ifBlank { "carga del modelo" }
+                    // El aviso también queda si el usuario cierra la app o el sistema la mata mientras
+                    // habla. Solo se retira la voz si Android confirma un fallo nativo; si no se sabe
+                    // (Android 8-10), hace falta que ocurra dos veces seguidas.
+                    val confirmed = when (previousExitWasNativeCrash) {
+                        true -> true
+                        false -> false
+                        null -> strike.exists()
+                    }
+                    if (confirmed) {
+                        entry.deleteRecursively()
+                        removedAfterCrash += entry.name to stage
+                    } else {
+                        runCatching { guard.delete() }
+                        if (previousExitWasNativeCrash == null) runCatching { strike.writeText(stage) }
+                    }
                 }
                 !File(entry, INSTALLED_MARKER).exists() -> entry.deleteRecursively()
             }

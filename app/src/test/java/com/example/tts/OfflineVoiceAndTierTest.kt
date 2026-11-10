@@ -36,7 +36,7 @@ class OfflineVoiceAndTierTest {
     @Test
     fun testOfflineVoiceCatalogHasRealVerifiedModelsAndHashes() {
         val candidates = OfflineVoiceCatalog.CANDIDATE_VOICES
-        assertEquals(3, candidates.size)
+        assertEquals(5, candidates.size)
 
         val female = OfflineVoiceCatalog.SHARVARD_FEMALE
         assertEquals("vits-piper-es_ES-sharvard-medium", female.id)

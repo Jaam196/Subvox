@@ -560,14 +560,18 @@ class OfflineNeuralSpeechEngine(
                 val live = activeTtsInstance ?: return@withLock null
                 val startTime = System.currentTimeMillis()
                 val sampleRate = live.sampleRate().takeIf { it > 0 } ?: 22050
-                OfflineVoiceCatalog.beginLoadGuard(context, voiceId, "síntesis de «${text.take(40)}»")
                 val fade = (sampleRate * 0.004f).toInt().coerceIn(8, 160)
                 val out = ByteArrayOutputStream()
                 var totalSamples = 0
                 for (seg in ProsodyPlanner.plan(text)) {
-                    val generated = runCatching {
-                        live.generate(text = seg.text, sid = 0, speed = (speed * seg.speedFactor).coerceIn(0.5f, 2.2f))
-                    }.getOrNull() ?: continue
+                    OfflineVoiceCatalog.beginLoadGuard(context, voiceId, "síntesis anticipada de «${text.take(40)}»")
+                    val generated = try {
+                        runCatching {
+                            live.generate(text = seg.text, sid = 0, speed = (speed * seg.speedFactor).coerceIn(0.5f, 2.2f))
+                        }.getOrNull()
+                    } finally {
+                        OfflineVoiceCatalog.endLoadGuard(context, voiceId)
+                    } ?: continue
                     if (generated.samples.isEmpty()) continue
                     if (seg.pauseBeforeMs > 0 && totalSamples > 0) out.write(silencePcm(seg.pauseBeforeMs, sampleRate))
                     val segPcm = floatsToPcm16(generated.samples, fade, fade, seg.gain)
@@ -575,7 +579,6 @@ class OfflineNeuralSpeechEngine(
                     totalSamples += generated.samples.size
                     if (seg.pauseAfterMs > 0) out.write(silencePcm(seg.pauseAfterMs, sampleRate))
                 }
-                OfflineVoiceCatalog.endLoadGuard(context, voiceId)
                 if (totalSamples == 0) return@withLock null
 
                 val synthMs = System.currentTimeMillis() - startTime
@@ -647,7 +650,6 @@ class OfflineNeuralSpeechEngine(
                 var totalSamples = 0
                 var aborted = false
                 var startedPlaying = false
-                val startTime = System.currentTimeMillis()
                 val fade = (sampleRate * 0.004f).toInt().coerceIn(8, 160)
 
                 try {
@@ -669,7 +671,7 @@ class OfflineNeuralSpeechEngine(
                         return true
                     }
 
-                    OfflineVoiceCatalog.beginLoadGuard(context, spec.id, "síntesis en streaming de «${text.take(40)}»")
+                    var synthMs = 0L
                     for (seg in ProsodyPlanner.plan(text)) {
                         if (aborted) break
                         if (seg.pauseBeforeMs > 0 && totalSamples > 0) {
@@ -681,16 +683,23 @@ class OfflineNeuralSpeechEngine(
                         // Se usa generate() (sin callback nativo): el callback JNI de generateWithCallback
                         // provocaba SIGABRT dentro de Sherpa en algunos móviles (Samsung, Android 17).
                         if (activeAudioTrack !== track) { aborted = true; break }
-                        val samples = live.generate(
-                            text = seg.text,
-                            sid = 0,
-                            speed = (speed * seg.speedFactor).coerceIn(0.5f, 2.2f)
-                        ).samples
+                        val genStart = System.currentTimeMillis()
+                        OfflineVoiceCatalog.beginLoadGuard(context, spec.id, "síntesis de «${text.take(40)}»")
+                        val samples = try {
+                            live.generate(
+                                text = seg.text,
+                                sid = 0,
+                                speed = (speed * seg.speedFactor).coerceIn(0.5f, 2.2f)
+                            ).samples
+                        } finally {
+                            OfflineVoiceCatalog.endLoadGuard(context, spec.id)
+                        }
+                        synthMs += System.currentTimeMillis() - genStart
                         if (samples.isEmpty()) continue
                         val pcm = floatsToPcm16(
                             samples,
                             fadeInSamples = fade,
-                            fadeOutSamples = 0,
+                            fadeOutSamples = fade,
                             gain = seg.gain
                         )
                         if (!writeToTrack(pcm)) { aborted = true; break }
@@ -704,9 +713,6 @@ class OfflineNeuralSpeechEngine(
                             pcmCollector.write(gap, 0, gap.size)
                         }
                     }
-
-                    OfflineVoiceCatalog.endLoadGuard(context, spec.id)
-                    val synthMs = System.currentTimeMillis() - startTime
 
                     if (!aborted && totalSamples > 0) {
                         val audioMs = ((totalSamples.toDouble() / sampleRate.toDouble()) * 1000.0).toLong()
@@ -734,10 +740,8 @@ class OfflineNeuralSpeechEngine(
                         }
                     }
                 } catch (e: kotlinx.coroutines.CancellationException) {
-                    OfflineVoiceCatalog.endLoadGuard(context, spec.id)
                     throw e
                 } catch (t: Throwable) {
-                    OfflineVoiceCatalog.endLoadGuard(context, spec.id)
                     com.example.diagnostics.CrashReporter.record(context, "Fallo al sintetizar con la voz neuronal", t)
                     onFallbackNoticeChanged("Fallo de la voz neuronal: ${t.javaClass.simpleName}: ${t.message}")
                 } finally {

@@ -59,7 +59,10 @@ class OfflineVoiceModelManager(private val context: Context) {
         // Una sola vez por proceso y antes de cargar ningún modelo: limpia instalaciones a medias
         // y retira la voz que provocó un cierre de la app en la carga anterior.
         if (recovered.compareAndSet(false, true)) {
-            val removed = OfflineVoiceCatalog.recoverAtStartup(context)
+            val removed = OfflineVoiceCatalog.recoverAtStartup(
+                context,
+                com.example.diagnostics.CrashReporter.previousExitWasNativeCrash(context)
+            )
             if (removed.isNotEmpty()) {
                 crashedModelIds.value = removed.map { it.first }.toSet()
                 com.example.diagnostics.CrashReporter.recordNative(

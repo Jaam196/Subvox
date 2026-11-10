@@ -117,6 +117,7 @@ object CrashReporter {
 
     /** El informe nativo (tombstone) es binario; se sacan solo las cadenas legibles que parecen pila. */
     private fun nativeTraceHighlights(info: android.app.ApplicationExitInfo): List<String> {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) return emptyList()
         val bytes = info.traceInputStream?.use { it.readBytes() } ?: return emptyList()
         val runs = mutableListOf<String>()
         val cur = StringBuilder()
@@ -135,6 +136,25 @@ object CrashReporter {
                 it.contains("what()", ignoreCase = true)
         }
         return interestingRuns.distinct().take(25).map { it.take(160) }
+    }
+
+    /**
+     * ¿El proceso anterior murió por un fallo real del código nativo?
+     * true/false en Android 11+, null si el sistema no lo sabe (Android 8-10).
+     */
+    fun previousExitWasNativeCrash(context: Context): Boolean? {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return null
+        return runCatching {
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            val last = am.getHistoricalProcessExitReasons(context.packageName, 0, 1).firstOrNull()
+                ?: return@runCatching null
+            when (last.reason) {
+                android.app.ApplicationExitInfo.REASON_CRASH_NATIVE -> true
+                // Señales de fallo: SIGILL(4) SIGABRT(6) SIGBUS(7) SIGFPE(8) SIGSEGV(11). SIGKILL(9) no es un fallo.
+                android.app.ApplicationExitInfo.REASON_SIGNALED -> last.status in setOf(4, 6, 7, 8, 11)
+                else -> false
+            }
+        }.getOrNull()
     }
 
     fun readLast(context: Context): String? {
