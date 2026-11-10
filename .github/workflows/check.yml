@@ -1,0 +1,45 @@
+name: Revisar (tests y lint)
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.3.1"
+      - name: Pruebas unitarias
+        id: tests
+        continue-on-error: true
+        run: gradle :app:testDebugUnitTest --no-daemon --no-configuration-cache --continue
+      - name: Lint
+        id: lint
+        continue-on-error: true
+        run: gradle :app:lintDebug --no-daemon --no-configuration-cache
+      - name: Resumen de lint
+        if: always()
+        run: |
+          f=$(ls app/build/reports/lint-results-debug.txt 2>/dev/null || true)
+          if [ -n "$f" ]; then cat "$f" | head -400; fi
+      - name: Resumen de pruebas fallidas
+        if: always()
+        run: |
+          grep -l -E "<failure|<error" app/build/test-results/testDebugUnitTest/*.xml 2>/dev/null | while read x; do echo "== $x"; grep -B2 -A12 -E "<failure|<error" "$x" | head -60; done || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: informes
+          path: |
+            app/build/reports
+            app/build/test-results
+      - name: Resultado
+        if: steps.tests.outcome == 'failure' || steps.lint.outcome == 'failure'
+        run: exit 1
