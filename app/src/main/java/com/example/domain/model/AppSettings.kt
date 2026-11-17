@@ -88,7 +88,7 @@ data class AppSettings(
     val similarityThreshold: Float = 0.82f,
     val minStableFrames: Int = 1,
     val historyTtlSeconds: Int = 90,
-    val newSubtitleBehavior: NewSubtitleBehavior = NewSubtitleBehavior.INTERRUPT_AND_READ_NEW,
+    val newSubtitleBehavior: NewSubtitleBehavior = NewSubtitleBehavior.FINISH_CURRENT_QUEUE,
     val highContrastPreprocessing: Boolean = true,
     val binarizeOcrImage: Boolean = false,
     val batterySaverMode: Boolean = false,

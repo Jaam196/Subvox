@@ -72,8 +72,12 @@ class OfflineNeuralSpeechEngine(
         private const val VITS_NOISE_SCALE_W = 0.8f
         private const val VITS_SILENCE_SCALE = 0.2f
 
-        private const val MAX_CATCH_UP = 0.30f
-        private const val CATCH_UP_STEP_UP = 0.06f
+        private const val MAX_CATCH_UP = 0.45f
+        private const val CATCH_UP_STEP_UP = 0.10f
+        /** Frases como mucho en espera: si se acumulan más, se descarta la más antigua (ya pasó en el vídeo). */
+        private const val MAX_PENDING = 2
+        /** Aceleración extra por cada frase que espera detrás de la actual. */
+        private const val BOOST_PER_PENDING = 0.12f
         private const val CATCH_UP_STEP_DOWN = 0.05f
     }
 
@@ -382,6 +386,9 @@ class OfflineNeuralSpeechEngine(
                 if (currentlySpeaking || pendingQueue.isNotEmpty()) {
                     catchUpLevel = min(MAX_CATCH_UP, catchUpLevel + CATCH_UP_STEP_UP)
                 }
+                while (pendingQueue.size >= MAX_PENDING) {
+                    pendingQueue.poll()
+                }
                 pendingQueue.offer(item)
                 triggerPreSynthesis(item)
                 ensureQueueWorkerRunning()
@@ -449,7 +456,8 @@ class OfflineNeuralSpeechEngine(
             1f
         }
 
-        val boost = max(lengthBoost, 1f + catchUpLevel).coerceAtMost(1f + MAX_CATCH_UP)
+        val queueBoost = 1f + catchUpLevel + BOOST_PER_PENDING * pendingQueue.size
+        val boost = max(lengthBoost, queueBoost).coerceAtMost(1f + MAX_CATCH_UP)
         return quantizeSpeed((base * boost).coerceIn(0.65f, 1.85f))
     }
 

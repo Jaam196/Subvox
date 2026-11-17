@@ -217,7 +217,7 @@ fun ReadingScreen(
                 options = NewSubtitleBehavior.entries.toList(),
                 selected = settings.newSubtitleBehavior,
                 label = {
-                    if (it == NewSubtitleBehavior.INTERRUPT_AND_READ_NEW) "Cortar y leer la nueva" else "Terminar la frase actual"
+                    if (it == NewSubtitleBehavior.INTERRUPT_AND_READ_NEW) "Cortar y leer la nueva" else "Terminar la frase y acelerar"
                 },
                 onSelect = vm::setNewSubtitleBehavior
             )

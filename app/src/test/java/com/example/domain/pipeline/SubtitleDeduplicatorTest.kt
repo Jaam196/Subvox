@@ -70,4 +70,27 @@ class SubtitleDeduplicatorTest {
         t += 150
         assertTrue(d.onFrameText("Esta es una frase de prueba larga", t, requiredStableFrames = 2).isSpeak())
     }
+
+    @Test
+    fun remainderOfExtendedPhrase() {
+        val d = SubtitleDeduplicator()
+        org.junit.Assert.assertEquals(
+            "¿vienes conmigo?",
+            d.remainderAfter("Oye, Naruto", "Oye, Naruto, ¿vienes conmigo?")
+        )
+        org.junit.Assert.assertNull(d.remainderAfter("Hola", "Adiós, hola"))
+    }
+
+    @Test
+    fun extendedPhraseSpeaksOnlyNewPart() {
+        val d = SubtitleDeduplicator(minStableFrames = 1)
+        val first = d.onFrameText("Tenemos que irnos", 1_000)
+        org.junit.Assert.assertTrue(first is SubtitleDeduplicator.Decision.SpeakNew)
+        val second = d.onFrameText("Tenemos que irnos de aquí antes de que llegue la tormenta", 1_300)
+        org.junit.Assert.assertTrue(second is SubtitleDeduplicator.Decision.SpeakNew)
+        org.junit.Assert.assertEquals(
+            "de aquí antes de que llegue la tormenta",
+            (second as SubtitleDeduplicator.Decision.SpeakNew).speakableText
+        )
+    }
 }

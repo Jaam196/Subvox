@@ -93,6 +93,7 @@ class SubtitleDeduplicator(
 
         // 1. ¿Sigue siendo el mismo subtítulo que ya está activo en pantalla o una expansión?
         val currentActive = activeSubtitle
+        var extendedFrom: String? = null
         if (currentActive != null) {
             val keyActive = currentActive.comparisonKey
             val keyNorm = normalized.comparisonKey
@@ -107,6 +108,8 @@ class SubtitleDeduplicator(
             val isExtension = keyActive.length >= 4 &&
                 keyNorm.length >= (keyActive.length * 1.4f).toInt() + 6 &&
                 keyNorm.contains(keyActive)
+
+            if (isExtension) extendedFrom = currentActive.speakableText
 
             if ((simWithActive >= similarityThreshold || isContained) && !isExtension) {
                 // Si el nuevo frame tiene un texto ligeramente más completo (p. ej. con mejor puntuación),
@@ -167,10 +170,34 @@ class SubtitleDeduplicator(
         // 4. Confirmado como subtítulo nuevo listo para leer en voz alta
         activeSubtitle = confirmed
         recordInHistory(confirmed, timestampMs)
+        // Si es la misma frase que ya se empezó a leer pero ahora completa, se lee solo lo que faltaba
+        val toSpeak = extendedFrom?.let { remainderAfter(it, confirmed.speakableText) } ?: confirmed.speakableText
         return Decision.SpeakNew(
-            speakableText = confirmed.speakableText,
+            speakableText = toSpeak,
             comparisonKey = confirmed.comparisonKey
         )
+    }
+
+    /**
+     * Parte de [full] que va después de [prefix], comparando sin mayúsculas ni puntuación.
+     * Devuelve null si [full] no empieza por [prefix] (entonces se lee la frase entera).
+     */
+    internal fun remainderAfter(prefix: String, full: String): String? {
+        fun core(c: Char) = c.isLetterOrDigit()
+        val p = prefix.filter(::core).lowercase()
+        if (p.isEmpty()) return null
+        var matched = 0
+        var cut = -1
+        for ((i, c) in full.withIndex()) {
+            if (!core(c)) continue
+            if (matched >= p.length) break
+            if (c.lowercaseChar() != p[matched]) return null
+            matched++
+            if (matched == p.length) { cut = i + 1; break }
+        }
+        if (cut < 0) return null
+        val rest = full.substring(cut).trimStart { !it.isLetterOrDigit() && it != '¿' && it != '¡' }
+        return rest.ifBlank { null }
     }
 
     @Synchronized

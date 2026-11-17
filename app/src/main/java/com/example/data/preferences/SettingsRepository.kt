@@ -48,7 +48,7 @@ class SettingsRepository(private val context: Context) {
         val SIMILARITY_THRESHOLD = floatPreferencesKey("similarity_threshold")
         val MIN_STABLE_FRAMES = intPreferencesKey("min_stable_frames_v2")
         val HISTORY_TTL_SECONDS = intPreferencesKey("history_ttl_seconds")
-        val NEW_SUBTITLE_BEHAVIOR = stringPreferencesKey("new_subtitle_behavior")
+        val NEW_SUBTITLE_BEHAVIOR = stringPreferencesKey("new_subtitle_behavior_v2")
         val HIGH_CONTRAST_PREPROCESSING = booleanPreferencesKey("high_contrast_preprocessing")
         val BINARIZE_OCR_IMAGE = booleanPreferencesKey("binarize_ocr_image")
         val BATTERY_SAVER_MODE = booleanPreferencesKey("battery_saver_mode")
@@ -130,7 +130,7 @@ class SettingsRepository(private val context: Context) {
         .map { prefs ->
             val defaultRoi = NormalizedRect.DEFAULT_SUBTITLE_ROI
             val roiModeStr = prefs[Keys.ROI_MODE] ?: RoiMode.AUTO.name
-            val behaviorStr = prefs[Keys.NEW_SUBTITLE_BEHAVIOR] ?: NewSubtitleBehavior.INTERRUPT_AND_READ_NEW.name
+            val behaviorStr = prefs[Keys.NEW_SUBTITLE_BEHAVIOR] ?: NewSubtitleBehavior.FINISH_CURRENT_QUEUE.name
 
             AppSettings(
                 ttsEnabled = prefs[Keys.TTS_ENABLED] ?: true,
@@ -155,7 +155,7 @@ class SettingsRepository(private val context: Context) {
                 minStableFrames = (prefs[Keys.MIN_STABLE_FRAMES] ?: 1).coerceIn(1, 5),
                 historyTtlSeconds = (prefs[Keys.HISTORY_TTL_SECONDS] ?: 90).coerceIn(10, 600),
                 newSubtitleBehavior = runCatching { NewSubtitleBehavior.valueOf(behaviorStr) }
-                    .getOrDefault(NewSubtitleBehavior.INTERRUPT_AND_READ_NEW),
+                    .getOrDefault(NewSubtitleBehavior.FINISH_CURRENT_QUEUE),
                 highContrastPreprocessing = prefs[Keys.HIGH_CONTRAST_PREPROCESSING] ?: true,
                 binarizeOcrImage = prefs[Keys.BINARIZE_OCR_IMAGE] ?: false,
                 batterySaverMode = prefs[Keys.BATTERY_SAVER_MODE] ?: false,

@@ -1,5 +1,11 @@
 # Cambios de SubVox
 
+## v2.1.3
+- La voz ya no corta la frase cuando aparece el siguiente subtítulo: por defecto termina la frase y acelera la siguiente si se va atrasando (configurable en Lectura).
+- Aceleración más fuerte cuando se acumulan frases (hasta +45 %); como mucho 2 frases en espera para no ir desfasado del vídeo.
+- La voz del sistema también acelera cuando hay frases esperando.
+- Si el OCR leyó media frase y luego aparece completa, solo se lee la parte que faltaba (antes se repetía o se cortaba).
+
 ## v2.1.2
 - Corregido: cierre nativo al liberar la voz descargada mientras todavía estaba generando audio (al salir de la app, parar el lector o cambiar de pantalla). Ahora espera a que termine la síntesis.
 

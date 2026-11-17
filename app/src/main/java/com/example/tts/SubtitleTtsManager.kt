@@ -408,6 +408,15 @@ class SubtitleTtsManager(
         val engine = tts ?: return
         val targetPitch = (pitchOverride ?: currentSettings.pitch).coerceIn(0.5f, 1.8f)
         runCatching { engine.setPitch(targetPitch) }
+        // Si hay frases esperando detrás, se lee esta un poco más rápido para no quedarse atrás
+        val baseRate = currentSettings.speechRate.coerceIn(0.5f, 2.2f)
+        val backlog = pendingQueue.size
+        val rate = if (currentSettings.catchUpSpeedEnabled && backlog > 0) {
+            (baseRate * (1f + 0.15f * backlog)).coerceAtMost(2.2f)
+        } else {
+            baseRate
+        }
+        runCatching { engine.setSpeechRate(rate) }
 
         updateLoudnessBoost(currentSettings.volumeBoostDb)
         if (currentSettings.duckOtherAudio) {
