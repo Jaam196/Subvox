@@ -1,5 +1,8 @@
 # Cambios de SubVox
 
+## v2.1.2
+- Corregido: cierre nativo al liberar la voz descargada mientras todavía estaba generando audio (al salir de la app, parar el lector o cambiar de pantalla). Ahora espera a que termine la síntesis.
+
 ## v2.1.1 (revisión)
 - Corregido: una voz descargada se borraba sola si la app se cerraba (o se actualizaba) mientras hablaba. Ahora solo se retira si Android confirma un fallo nativo.
 - Corregido: el aviso "voz offline lenta" saltaba sin motivo porque contaba el tiempo de reproducción como tiempo de síntesis.

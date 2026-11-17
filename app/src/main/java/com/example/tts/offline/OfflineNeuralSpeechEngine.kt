@@ -848,9 +848,14 @@ class OfflineNeuralSpeechEngine(
     override fun shutdown() {
         stop()
         engineScope.cancel()
-        runCatching { activeTtsInstance?.free() }
-        activeTtsInstance = null
-        loadedModelId = ""
+        // Cancelar una corrutina no detiene una llamada nativa que ya está generando audio.
+        // Liberar el modelo en ese momento destruía la memoria que Sherpa estaba usando y cerraba
+        // la app (fallo nativo). Se libera solo cuando no hay ninguna síntesis ni carga en curso.
+        CoroutineScope(Dispatchers.Default + kotlinx.coroutines.NonCancellable).launch {
+            loadMutex.withLock {
+                synthMutex.withLock { releaseTtsInstanceLocked() }
+            }
+        }
         runCatching {
             loudnessEnhancer?.release()
         }
