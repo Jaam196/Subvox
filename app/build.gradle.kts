@@ -94,7 +94,13 @@ secrets {
 googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }
 
 val sherpaAar = file("libs/sherpa-onnx-1.13.8.aar")
-if (!sherpaAar.exists() || sherpaAar.length() < 1_000_000L) {
+// Tamaño exacto del AAR oficial: una descarga cortada deja un archivo más pequeño que rompe la compilación.
+val sherpaAarSize = 50_129_134L
+if (sherpaAar.exists() && sherpaAar.length() != sherpaAarSize) {
+  logger.warn("SubVox: ${sherpaAar.name} está incompleto (${sherpaAar.length()} bytes); se vuelve a descargar.")
+  sherpaAar.delete()
+}
+if (!sherpaAar.exists()) {
   sherpaAar.parentFile?.mkdirs()
   try {
     ProcessBuilder(
@@ -106,7 +112,7 @@ if (!sherpaAar.exists() || sherpaAar.length() < 1_000_000L) {
       .waitFor()
   } catch (_: Exception) {}
   // Si la descarga falló, curl puede dejar un archivo corrupto/vacío: se elimina para reintentar.
-  if (sherpaAar.exists() && sherpaAar.length() < 1_000_000L) {
+  if (sherpaAar.exists() && sherpaAar.length() != sherpaAarSize) {
     sherpaAar.delete()
   }
 }
